@@ -52,7 +52,7 @@ app.use(
   cors({
     origin: [
       "http://xn--centrobilingepebose-hbc.com/",
-      "https://tu-frontend-en-render.onrender.com",
+      "https://pebose-backend.onrender.com",
     ], // Añade tu frontend si lo tienes deployado
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
