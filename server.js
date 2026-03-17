@@ -25,7 +25,7 @@ import { protect } from "./middleware/auth.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-app.use(cors());
+
 // 🛡️ Security middleware
 app.use(
   helmet({
@@ -44,22 +44,28 @@ const apiLimiter = rateLimit({
 });
 
 // 🌐 CORS configuration
-const frontendUrls = process.env.FRONTEND_URL?.split(",") || [
+
+const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
+  "https://xn--centrobilingepebose-hbc.com", // Sin barra al final ni espacios
+  "https://pebose-backend.onrender.com",
 ];
-// Middleware CORS (Debe estar ANTES de las rutas)
 app.use(
   cors({
-    origin: [
-      "http://xn--centrobilingepebose-hbc.com/",
-      "https://pebose-backend.onrender.com",
-    ], // Añade tu frontend si lo tienes deployado
+    origin: function (origin, callback) {
+      // Permitir si el origen está en la lista o si es undefined (peticiones desde móvil/postman)
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("No permitido por CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-
 // 📦 Body parsers
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
