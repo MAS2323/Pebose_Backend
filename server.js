@@ -47,9 +47,13 @@ const apiLimiter = rateLimit({
 const frontendUrls = process.env.FRONTEND_URL?.split(",") || [
   "http://localhost:5173",
 ];
+// Middleware CORS (Debe estar ANTES de las rutas)
 app.use(
   cors({
-    origin: frontendUrls,
+    origin: [
+      "http://xn--centrobilingepebose-hbc.com/",
+      "https://tu-frontend-en-render.onrender.com",
+    ], // Añade tu frontend si lo tienes deployado
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
