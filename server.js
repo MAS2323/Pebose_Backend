@@ -30,7 +30,7 @@ const PORT = process.env.PORT || 4000;
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://xn--centrobilingepebose-hbc.com", // ✅ Sin espacios ni barra final
+  "centrobilingüepebose.com", // ✅ Sin espacios ni barra final
   "https://pebose-backend.onrender.com",
 ];
 
