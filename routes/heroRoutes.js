@@ -18,10 +18,10 @@ router.get("/public", getPublicSlides);
 // 🔐 Protegidas (Admin)
 router.use(protect);
 
-router.get("/", getAllSlides);
-router.post("/", uploadHero, createSlide);
-router.put("/:id", uploadHero, updateSlide);
-router.delete("/:id", deleteSlide);
+router.get("/slides", getAllSlides);
+router.post("/slides", uploadHero, createSlide);
+router.put("/slides/:id", uploadHero, updateSlide);
+router.delete("/slides/:id", deleteSlide);
 router.patch("/reorder", reorderSlides);
 
 export default router;
