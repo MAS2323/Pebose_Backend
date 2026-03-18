@@ -1,3 +1,5 @@
+// backend/server.js - Solo cambia la sección de CORS
+
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -5,11 +7,6 @@ import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import { loadEnv } from "./config/env.js";
 import connectDB from "./config/database.js";
-
-// Cargar variables de entorno
-loadEnv();
-dotenv.config();
-connectDB();
 
 // Importar rutas
 import authRoutes from "./routes/authRoutes.js";
@@ -23,32 +20,16 @@ import { protect } from "./middleware/auth.js";
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// 🌐 CORS CONFIGURACIÓN CORREGIDA
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:3000",
-  "https://xn--centrobilingepebose-hbc.com", // ← Tu dominio real
-  "https://www.xn--centrobilingepebose-hbc.com", // ← Con www
-];
+// 🌐 CORS PERMISSIVE - Como en tu código que funciona
+app.use(cors());
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      console.log("🔍 Origen recibido:", origin); // Debug
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn("❌ CORS bloqueado para:", origin);
-        callback(new Error("No permitido por CORS"));
-      }
-    },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-  }),
-);
+// O si necesitas credentials, usa:
+// app.use(cors({
+//   origin: true,
+//   credentials: true
+// }));
 
-// Middlewares
+// Resto de tu código...
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -95,5 +76,6 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
-  console.log(`✅ CORS configurado para:`, allowedOrigins);
 });
+
+export default app;
