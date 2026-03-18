@@ -21,7 +21,16 @@ const app = express();
 const PORT = process.env.PORT || 4000;
 
 // 🌐 CORS PERMISSIVE - Como en tu código que funciona
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://xn--centrobilingepebose-hbc.com",
+      "https://www.xn--centrobilingepebose-hbc.com",
+    ],
+    credentials: true,
+  }),
+);
 
 // O si necesitas credentials, usa:
 // app.use(cors({
