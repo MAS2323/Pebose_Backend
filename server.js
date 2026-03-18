@@ -1,4 +1,3 @@
-// backend/server.js
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
@@ -26,18 +25,19 @@ import { protect } from "./middleware/auth.js";
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// 🌐 1. CONFIGURACIÓN CORS (ANTES DE CUALQUIER RUTA)
+// 🌐 CONFIGURACIÓN CORS CORREGIDA
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "centrobilingüepebose.com", // ✅ Sin espacios ni barra final
-  "https://pebose-backend.onrender.com",
+  "https://xn--centrobilingepebose-hbc.com", // ✅ Codificado correctamente (ü → u)
+  "https://www.xn--centrobilingepebose-hbc.com", // ✅ Con www
+  "https://pebose-backend.onrender.com", // ✅ Sin espacio al final
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Permitir si el origen está en la lista o si es undefined (apps móviles, postman, etc)
+      console.log("🔍 Origen recibido:", origin); // DEBUG
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -52,7 +52,7 @@ app.use(
 );
 
 // 🛡️ Security middleware
-app.use(helmet({ contentSecurityPolicy: false })); // Desactivado para desarrollo si da problemas
+app.use(helmet({ contentSecurityPolicy: false }));
 
 // ⚡ Rate limiting
 const apiLimiter = rateLimit({
@@ -65,15 +65,15 @@ const apiLimiter = rateLimit({
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// 🏷️ Health check (Ruta raíz)
+// 🏷️ Health check
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
     message: "Servidor CEEP funcionando 🚀",
     timestamp: new Date().toISOString(),
     endpoints: {
-      login: "/auth/login",
-      docs: "/documentos/upload",
+      login: "/api/auth/login",
+      docs: "/api/documentos/upload",
     },
   });
 });
@@ -82,13 +82,13 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// 🛣️ Register routes (CON EL PREFIJO /api)
-app.use("/auth", apiLimiter, authRoutes);
-app.use("/hero", apiLimiter, heroRoutes);
-app.use("/instalaciones", apiLimiter, instalacionesRoutes);
-app.use("/especialidades", apiLimiter, especialidadRoutes);
-app.use("/documentos", apiLimiter, documentoRoutes);
-app.use("/admin", protect, adminRoutes);
+// 🛣️ Register routes (TODOS CON /api)
+app.use("/api/auth", apiLimiter, authRoutes);
+app.use("/api/hero", apiLimiter, heroRoutes);
+app.use("/api/instalaciones", apiLimiter, instalacionesRoutes);
+app.use("/api/especialidades", apiLimiter, especialidadRoutes);
+app.use("/api/documentos", apiLimiter, documentoRoutes);
+app.use("/api/admin", protect, adminRoutes);
 
 // ❌ 404 handler
 app.use((req, res) => {
@@ -111,6 +111,7 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`🌍 Entorno: ${process.env.NODE_ENV || "development"}`);
+  console.log(`✅ Rutas montadas con prefijo: /api`);
 });
 
 // Graceful shutdown
