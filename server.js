@@ -5,10 +5,10 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
-import { loadEnv } from "./config/env.js";
+import { loadEnv } from "./config/env.js"; // si lo usas, sino quítalo
 import connectDB from "./config/database.js";
 
-// Importar rutas
+// Rutas
 import authRoutes from "./routes/authRoutes.js";
 import heroRoutes from "./routes/heroRoutes.js";
 import instalacionesRoutes from "./routes/instalacionesRoutes.js";
@@ -19,106 +19,75 @@ import { protect } from "./middleware/auth.js";
 
 const app = express();
 
-// Carga variables de entorno temprano
-loadEnv(); // o dotenv.config() si lo usas directamente
-
+dotenv.config(); // Carga .env (o usa loadEnv si es custom)
 const PORT = process.env.PORT || 4000;
 
+// Lista de orígenes permitidos – agrega variaciones comunes
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  "https://xn--centrobilingepebose-hbc.com",
+  "https://www.xn--centrobilingepebose-hbc.com", // por si usas www
+  // Si pruebas con dominio temporal de Railway: "https://tu-proyecto.up.railway.app"
+];
+
 // ────────────────────────────────────────────────
-// 🌐 CORS CONFIGURACIÓN ROBUSTA PARA RAILWAY + CREDENCIALES
+// CORS: Lo más arriba posible
 // ────────────────────────────────────────────────
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  // Lista de orígenes permitidos (agrega tu frontend de Railway si tiene .railway.app temporal)
-  const allowedOrigins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "https://xn--centrobilingepebose-hbc.com",
-    "https://www.xn--centrobilingepebose-hbc.com",
-    // Si usas el dominio temporal de Railway para pruebas: "https://tu-proyecto.railway.app"
-  ];
-
-  // Refleja el origin exacto si está permitido (necesario con credentials: true)
-  if (origin && allowedOrigins.includes(origin)) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  } else if (!origin) {
-    // Permite requests sin origin (Postman, curl, mobile)
-    res.setHeader("Access-Control-Allow-Origin", "*");
-  }
-
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Content-Type, Authorization, Accept, X-Requested-With",
-  );
-
-  // Manejo inmediato de preflight OPTIONS (muy importante para uploads multipart)
-  if (req.method === "OPTIONS") {
-    console.log(`Preflight OPTIONS desde origin: ${origin || "sin origin"}`);
-    return res.sendStatus(204);
-  }
-
-  next();
-});
-
-// Alternativa con paquete cors (puedes usar una o la otra; el manual arriba es más controlable)
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
+      // Log para debug en producción (mira logs de Railway)
+      console.log(`[CORS] Origin recibido: ${origin || "sin origin"}`);
 
-      const allowed = [
-        "http://localhost:5173",
-        "https://xn--centrobilingepebose-hbc.com",
-        "https://www.xn--centrobilingepebose-hbc.com",
-      ];
-
-      if (allowed.includes(origin)) {
-        callback(null, origin);
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, origin || "*"); // refleja exacto o * si no hay origin
       } else {
-        callback(null, false); // o callback(new Error("Not allowed"))
+        console.warn(`[CORS] Origin rechazado: ${origin}`);
+        callback(null, false);
       }
     },
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 204,
+    credentials: true, // Necesario si usas cookies o auth con credentials
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "Accept",
+      "X-Requested-With",
+    ],
+    optionsSuccessStatus: 204, // Respuesta estándar para preflight
   }),
 );
 
+// Manejo explícito de OPTIONS para TODAS las rutas (clave en Railway/Render)
+app.options("*", cors());
+
 // ────────────────────────────────────────────────
-// OTROS MIDDLEWARES (después de CORS)
+// Middlewares adicionales
 // ────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Rate limiting
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
+  windowMs: 15 * 60 * 1000,
   max: 100,
   message: {
     success: false,
-    message: "Demasiadas solicitudes, intenta más tarde",
+    message: "Demasiadas solicitudes, espera un momento",
   },
 });
 
-// Health check (para verificar que el servidor vive)
+// Health check simple para verificar que el servidor responde
 app.get("/", (req, res) => {
   res.json({
     status: "ok",
-    message: "Servidor PEBOSE funcionando 🚀 en Railway",
+    message: "Servidor PEBOSE activo 🚀",
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || "development",
   });
 });
 
-// Rutas API
+// Rutas protegidas con limiter
 app.use("/api/auth", apiLimiter, authRoutes);
 app.use("/api/hero", apiLimiter, heroRoutes);
 app.use("/api/instalaciones", apiLimiter, instalacionesRoutes);
@@ -126,9 +95,7 @@ app.use("/api/especialidades", apiLimiter, especialidadRoutes);
 app.use("/api/documentos", apiLimiter, documentoRoutes);
 app.use("/api/admin", protect, adminRoutes);
 
-// ────────────────────────────────────────────────
-// ERROR HANDLERS (al final)
-// ────────────────────────────────────────────────
+// 404 y errores
 app.use((req, res) => {
   res.status(404).json({
     success: false,
@@ -137,29 +104,25 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-  console.error("❌ Error global:", err.stack || err.message);
+  console.error("[ERROR GLOBAL]:", err.message, err.stack);
   res.status(err.status || 500).json({
     success: false,
     message: err.message || "Error interno del servidor",
   });
 });
 
-// ────────────────────────────────────────────────
-// INICIO: CONECTA DB PRIMERO, LUEGO LISTEN
-// ────────────────────────────────────────────────
+// Inicio del servidor: DB primero
 const startServer = async () => {
   try {
     await connectDB();
-    console.log("✅ Base de datos conectada correctamente");
+    console.log("✅ MongoDB conectado");
 
     app.listen(PORT, () => {
-      console.log(
-        `🚀 Servidor corriendo en puerto ${PORT} - Entorno: ${process.env.NODE_ENV || "development"}`,
-      );
+      console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Falló al iniciar servidor (problema con DB):", err);
-    process.exit(1); // Railway reiniciará automáticamente si falla
+    console.error("❌ Error al iniciar:", err);
+    process.exit(1);
   }
 };
 
