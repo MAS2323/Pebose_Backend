@@ -34,32 +34,26 @@ const allowedOrigins = [
 // ────────────────────────────────────────────────
 // CORS: Lo más arriba posible
 // ────────────────────────────────────────────────
+// En server.js
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Log para debug en producción (mira logs de Railway)
-      console.log(`[CORS] Origin recibido: ${origin || "sin origin"}`);
-
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, origin || "*"); // refleja exacto o * si no hay origin
+      const allowed = [
+        "https://xn--centrobilingepebose-hbc.com",
+        "https://www.xn--centrobilingepebose-hbc.com",
+      ];
+      if (!origin || allowed.includes(origin)) {
+        callback(null, origin);
       } else {
-        console.warn(`[CORS] Origin rechazado: ${origin}`);
         callback(null, false);
       }
     },
-    credentials: true, // Necesario si usas cookies o auth con credentials
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: [
-      "Content-Type",
-      "Authorization",
-      "Accept",
-      "X-Requested-With",
-    ],
-    optionsSuccessStatus: 204, // Respuesta estándar para preflight
+    credentials: true,
+    methods: ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
-// Manejo explícito de OPTIONS para TODAS las rutas (clave en Railway/Render)
 app.options("*", cors());
 
 // ────────────────────────────────────────────────
