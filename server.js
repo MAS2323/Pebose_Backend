@@ -72,8 +72,8 @@ app.get("/", (req, res) => {
     message: "Servidor CEEP funcionando 🚀",
     timestamp: new Date().toISOString(),
     endpoints: {
-      login: "/api/auth/login",
-      docs: "/api/documentos/upload",
+      login: "/auth/login",
+      docs: "/documentos/upload",
     },
   });
 });
@@ -83,12 +83,12 @@ app.get("/api/health", (req, res) => {
 });
 
 // 🛣️ Register routes (CON EL PREFIJO /api)
-app.use("/api/auth", apiLimiter, authRoutes);
-app.use("/api/hero", apiLimiter, heroRoutes);
-app.use("/api/instalaciones", apiLimiter, instalacionesRoutes);
-app.use("/api/especialidades", apiLimiter, especialidadRoutes);
-app.use("/api/documentos", apiLimiter, documentoRoutes);
-app.use("/api/admin", protect, adminRoutes);
+app.use("/auth", apiLimiter, authRoutes);
+app.use("/hero", apiLimiter, heroRoutes);
+app.use("/instalaciones", apiLimiter, instalacionesRoutes);
+app.use("/especialidades", apiLimiter, especialidadRoutes);
+app.use("/documentos", apiLimiter, documentoRoutes);
+app.use("/admin", protect, adminRoutes);
 
 // ❌ 404 handler
 app.use((req, res) => {
@@ -111,7 +111,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`\n🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`🌍 Entorno: ${process.env.NODE_ENV || "development"}`);
-  console.log(`✅ Rutas montadas con prefijo: /api`);
 });
 
 // Graceful shutdown
